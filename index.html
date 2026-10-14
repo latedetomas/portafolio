@@ -540,7 +540,7 @@ const src = f => "img/" + f;
 const vsrc = f => "videos/" + f;
 /* Portada de cada proyecto (índice → archivo y punto de anclaje del recorte) */
 const IMG = {
-  0: {v:"watts-hero.mp4", m:"watts-hero-mobile.webp", f:"hero-watts.jpg", pos:"50% 45%"},
+  0: {v:"watts-hero.mp4", m:"watts-hero-mobile.webp", mf:"hero-watts-mobile.jpg", f:"hero-watts.jpg", pos:"50% 45%"},
   1: {m:"hero-alagorra-mobile.jpg", f:"hero-alagorra.jpg", pos:"38% 55%"},
   2: {m:"hero-daam-mobile.jpg", f:"hero-daam.jpg", pos:"50% 50%"},
   3: {f:"masmedia-udla-01.jpg", pos:"50% 50%"},
@@ -587,7 +587,7 @@ featured.forEach((pi,k) => {
   s.className = "slide" + (k === 0 ? " on" : "");
   const im = IMG[pi];
   s.innerHTML = im && im.m
-    ? `<div class="art has-img" style="--pos:${im.pos}"><picture><source media="(max-aspect-ratio: 4/5)" srcset="${src(im.m)}"><img src="${src(im.f)}" alt="${p.t}" decoding="async"></picture>${im.v ? `<video class="hero-vid" muted loop playsinline autoplay preload="metadata" poster="${src(im.f)}"><source src="${vsrc(im.v)}" type="video/mp4"></video>` : ""}</div>`
+    ? `<div class="art has-img" style="--pos:${im.pos}"><picture><source media="(max-aspect-ratio: 4/5)" srcset="${src(im.m)}"><img src="${src(im.f)}" alt="${p.t}" decoding="async"${im.mf ? ` onerror="this.onerror=null;var s=this.parentNode.querySelector('source');if(s){s.srcset='${src(im.mf)}'}"` : ""}></picture>${im.v ? `<video class="hero-vid" muted loop playsinline autoplay preload="metadata" poster="${src(im.f)}"><source src="${vsrc(im.v)}" type="video/mp4"></video>` : ""}</div>`
     : art(pi, p.motion ? `Video destacado en loop — ${p.t}` : `Imagen destacada — ${p.t}`, p.motion);
   s.style.cursor = "pointer";
   s.addEventListener("click", () => openProject(pi));
