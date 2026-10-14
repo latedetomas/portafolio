@@ -106,6 +106,11 @@ html,body{overflow-x:clip}
   background-image:radial-gradient(circle,var(--b) 26%,transparent 28%);background-size:9px 9px}
 .art.has-img{background:#141414;overflow:hidden}
 .art picture{position:absolute;inset:0;display:block}
+.art video,.frame video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.frame{position:relative}
+.p-grid .frame video{position:static;height:100%}
+@media (max-aspect-ratio: 4/5){.hero-vid{display:none}}
+@media (prefers-reduced-motion:reduce){.hero-vid{display:none}}
 .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:var(--pos,50% 50%);display:block}
 .art .lbl{position:absolute;left:.7rem;top:.55rem;font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;color:#fff;mix-blend-mode:difference}
 .art.motion{background-image:repeating-linear-gradient(100deg,var(--a) 0 28px,var(--b) 28px 56px);background-size:400% 100%;animation:roll 6s linear infinite}
@@ -522,14 +527,14 @@ const projects = [
       {f:"ilustracion-05.jpg", w:682, h:679, cap:"No mires", c:1, s:4, mc:1, ms:7},
       {f:"ilustracion-06.jpg", w:682, h:679, cap:"Cuelga tus flores", c:6, s:4, mc:6, ms:7},
       {f:"ilustracion-07.jpg", w:682, h:679, cap:"CC", c:3, s:5, mc:1, ms:9},
-      {f:"ilustracion-08.jpg", w:682, h:679, cap:"Agárrate", gifPending:"ilustracion-08.gif", c:9, s:4, mc:5, ms:8, line:true}
+      {f:"ilustracion-08.jpg", w:682, h:679, cap:"Agárrate", videoPending:"ilustracion-08.mp4", c:9, s:4, mc:5, ms:8, line:true}
     ]},
 ];
 /* Imágenes: todas viven en la carpeta img/ junto a este archivo */
 const src = f => "img/" + f;
 /* Portada de cada proyecto (índice → archivo y punto de anclaje del recorte) */
 const IMG = {
-  0: {m:"hero-watts-mobile.jpg", f:"hero-watts.jpg", pos:"50% 45%"},
+  0: {v:"watts-hero.mp4", m:"hero-watts-mobile.jpg", f:"hero-watts.jpg", pos:"50% 45%"},
   1: {m:"hero-alagorra-mobile.jpg", f:"hero-alagorra.jpg", pos:"38% 55%"},
   2: {m:"hero-daam-mobile.jpg", f:"hero-daam.jpg", pos:"50% 50%"},
   3: {f:"masmedia-udla-01.jpg", pos:"50% 50%"},
@@ -576,7 +581,7 @@ featured.forEach((pi,k) => {
   s.className = "slide" + (k === 0 ? " on" : "");
   const im = IMG[pi];
   s.innerHTML = im && im.m
-    ? `<div class="art has-img" style="--pos:${im.pos}"><picture><source media="(max-aspect-ratio: 4/5)" srcset="${src(im.m)}"><img src="${src(im.f)}" alt="${p.t}" decoding="async"></picture></div>`
+    ? `<div class="art has-img" style="--pos:${im.pos}"><picture><source media="(max-aspect-ratio: 4/5)" srcset="${src(im.m)}"><img src="${src(im.f)}" alt="${p.t}" decoding="async"></picture>${im.v ? `<video class="hero-vid" muted loop playsinline autoplay preload="metadata" poster="${src(im.f)}"><source src="${vsrc(im.v)}" type="video/mp4"></video>` : ""}</div>`
     : art(pi, p.motion ? `Video destacado en loop — ${p.t}` : `Imagen destacada — ${p.t}`, p.motion);
   s.style.cursor = "pointer";
   s.addEventListener("click", () => openProject(pi));
@@ -726,6 +731,7 @@ function openProject(i){
   const ex = document.getElementById("pExtra");
   ex.innerHTML = extra;
   ex.querySelectorAll(".m-strip").forEach(bindStrip);
+  watchVideos(grid); watchVideos(ex);
   sheet.showModal(); sheet.scrollTop = 0;
 }
 /* prefetch: start downloading a project's images before it opens */
@@ -739,8 +745,21 @@ function prefetch(i){
   list.forEach(f => { const im = new Image(); im.decoding = "async"; im.src = src(f); });
 }
 /* gallery figure + document strips (manual, revista, brochure) */
+/* videos/ folder: if the file exists it plays in loop; if not, the image stays */
+const vsrc = f => "videos/" + f;
+function mediaHTML(p, g){
+  const alt = `${esc(p.t)}: ${esc(g.cap)}`;
+  if (g.videoPending) return `<video class="loopvid" muted loop playsinline preload="none" poster="${src(g.f)}" aria-label="${alt}"><source src="${vsrc(g.videoPending)}" type="video/mp4"></video>`;
+  if (g.gifPending) return `<img src="${vsrc(g.gifPending)}" alt="${alt}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${src(g.f)}'">`;
+  return `<img src="${src(g.f)}" alt="${alt}" loading="lazy" decoding="async">`;
+}
+const vidIO = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => {
+  const v = e.target;
+  if (e.isIntersecting && !reduce){ v.play().catch(() => {}); } else { v.pause(); }
+}), {threshold: .25}) : null;
+function watchVideos(root){ root.querySelectorAll("video.loopvid").forEach(v => { if (vidIO) vidIO.observe(v); if (reduce) v.controls = true; }); }
 function figHTML(p, g){
-  return `<figure style="--c:${g.c};--s:${g.s};--mc:${g.mc};--ms:${g.ms}"><div class="frame" style="aspect-ratio:${g.w}/${g.h}${g.r ? ";border-radius:" + g.r : ""}${g.line ? ";box-shadow:0 0 0 1px var(--line)" : ""}"><img src="${src(g.f)}" alt="${esc(p.t)}: ${esc(g.cap)}" loading="lazy" decoding="async"></div><figcaption>${esc(g.cap)}${g.link ? `<a class="fig-link" href="${g.link.href}" target="_blank" rel="noopener">${esc(g.link.text)}</a>` : ""}</figcaption></figure>`;
+  return `<figure style="--c:${g.c};--s:${g.s};--mc:${g.mc};--ms:${g.ms}"><div class="frame" style="aspect-ratio:${g.w}/${g.h}${g.r ? ";border-radius:" + g.r : ""}${g.line ? ";box-shadow:0 0 0 1px var(--line)" : ""}">${mediaHTML(p, g)}</div><figcaption>${esc(g.cap)}${g.link ? `<a class="fig-link" href="${g.link.href}" target="_blank" rel="noopener">${esc(g.link.text)}</a>` : ""}</figcaption></figure>`;
 }
 function stripHTML(p, title, note, radius, pages){
   return `<section class="p-manual"><div class="m-head"><h3>${esc(title)}</h3><span class="m-note">${esc(note || "")}</span>
