@@ -163,6 +163,7 @@ dialog::backdrop{background:rgba(0,0,0,.25)}
 
 /* project page (Mariano + Delcan) */
 .p-hero{aspect-ratio:16/8;margin:3.5rem 0 3rem;clear:both}
+.p-hero.is-video{aspect-ratio:2/1!important}
 .p-text{display:grid;grid-template-columns:1fr 1fr;gap:var(--pad);margin-bottom:4rem}
 .p-text > div{grid-column:2}
 .p-text .meta{font-size:.85rem;margin:0}
@@ -730,7 +731,12 @@ function openProject(i){
   document.getElementById("pTitle").textContent = p.sub ? `${p.t} — ${p.sub}` : p.t;
   document.getElementById("pBody").innerHTML = (p.body || DEFAULT_BODY).map(t => `<p>${esc(t)}</p>`).join("");
   document.getElementById("pFacts").innerHTML = (p.facts || []).map(([k,v]) => `<dt>${esc(k)}</dt><dd>${v.startsWith("<a ") ? v : esc(v)}</dd>`).join("");
-  document.getElementById("pHero").innerHTML = art(i, p.motion ? "Video principal en loop" : "Imagen principal", p.motion);
+  const ph = document.getElementById("pHero"), hv = IMG[i]?.v;
+  ph.classList.toggle("is-video", !!hv);
+  ph.innerHTML = hv
+    ? `<div class="art has-img"><video class="loopvid" muted loop playsinline autoplay preload="metadata" poster="${src(IMG[i].f)}" aria-label="${esc(p.t)}"><source src="${vsrc(hv)}" type="video/mp4"></video></div>`
+    : art(i, p.motion ? "Video principal en loop" : "Imagen principal", p.motion);
+  if (hv && !reduce) kick(ph.querySelector("video"));
   const grid = document.getElementById("pGrid");
   if (p.gallery || p.sections){
     grid.innerHTML = (p.gallery || []).map(g => figHTML(p, g)).join("");
