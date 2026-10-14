@@ -532,6 +532,7 @@ const projects = [
 ];
 /* Imágenes: todas viven en la carpeta img/ junto a este archivo */
 const src = f => "img/" + f;
+const vsrc = f => "videos/" + f;
 /* Portada de cada proyecto (índice → archivo y punto de anclaje del recorte) */
 const IMG = {
   0: {v:"watts-hero.mp4", m:"hero-watts-mobile.jpg", f:"hero-watts.jpg", pos:"50% 45%"},
@@ -746,7 +747,6 @@ function prefetch(i){
 }
 /* gallery figure + document strips (manual, revista, brochure) */
 /* videos/ folder: if the file exists it plays in loop; if not, the image stays */
-const vsrc = f => "videos/" + f;
 function mediaHTML(p, g){
   const alt = `${esc(p.t)}: ${esc(g.cap)}`;
   if (g.videoPending) return `<video class="loopvid" muted loop playsinline preload="none" poster="${src(g.f)}" aria-label="${alt}"><source src="${vsrc(g.videoPending)}" type="video/mp4"></video>`;
