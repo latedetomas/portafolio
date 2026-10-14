@@ -97,7 +97,9 @@ button{font:inherit;color:inherit}
 }
 .pill .m{color:var(--muted)}
 .pill .sep{width:1px;height:1em;background:var(--line)}
-.work .pill{margin-top:.6rem;height:2rem;font-size:.66rem}
+.work .pill{margin-top:.6rem;height:2rem;font-size:.66rem;max-width:100%;overflow:hidden}
+.work .pill .t{overflow:hidden;text-overflow:ellipsis;min-width:0}
+html,body{overflow-x:clip}
 
 /* placeholders */
 .art{position:relative;width:100%;height:100%;background-color:var(--a);
@@ -255,7 +257,7 @@ dialog::backdrop{background:rgba(0,0,0,.25)}
 <main>
   <div class="bio-wrap">
     <p class="bio">
-      Tomás Cuadros Ramírez. Diseñador gráfico e ilustrador. Branding, packaging, serigrafía, ilustración, editorial y, últimamente, mucho motion para ferias y redes. Abierto a encargos y colaboraciones.
+      Tomás Cuadros Ramírez. Diseñador gráfico e ilustrador. Branding, packaging, serigrafía, ilustración, editorial, motion y contenido para redes. Abierto a encargos y colaboraciones.
       Escríbeme: <span class="mail">tcuadrosr@gmail.com</span> / <a href="https://www.instagram.com/latesiempre_/" target="_blank" rel="noopener">Instagram</a> / <a href="https://www.linkedin.com/in/tom%C3%A1s-cuadros-ab0639211" target="_blank" rel="noopener">LinkedIn</a>.
     </p>
   </div>
@@ -599,7 +601,7 @@ projects.forEach((p,i) => {
   b.type = "button"; b.className = "work";
   b.style.cssText = `--c:${L.c};--s:${L.s};--ar:${IMG[i]?.ar || L.ar};--mt:${L.mt};--mc:${L.mc};--ms:${L.ms}`;
   b.innerHTML = `<div class="frame">${art(i, p.motion ? "Video en loop" : "Tu imagen", p.motion)}</div>
-    <span class="pill"><span class="m">${p.c}</span><span class="sep"></span>${p.t}</span>`;
+    <span class="pill"><span class="m">${p.c}</span><span class="sep"></span><span class="t">${p.t}</span></span>`;
   b.setAttribute("aria-label", `${p.t}, ${p.c}, ${p.y}`);
   b.addEventListener("click", () => openProject(i));
   ["pointerenter","focus","touchstart"].forEach(ev => b.addEventListener(ev, () => prefetch(i), {once:true, passive:true}));
