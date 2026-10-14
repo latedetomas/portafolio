@@ -52,7 +52,8 @@ button{font:inherit;color:inherit}
 
 /* hero slideshow */
 .hero{position:relative;height:100svh;min-height:520px;overflow:hidden;background:#1A1A1A}
-.slide{position:absolute;inset:0;opacity:0;transition:opacity 1.2s ease}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity 1.2s ease;pointer-events:none}
+.slide.on{pointer-events:auto}
 .slide.on{opacity:1}
 .slide .art{transform:scale(1.001);transition:transform 7s linear}
 .slide.on .art{transform:scale(1.06)}
@@ -106,11 +107,14 @@ html,body{overflow-x:clip}
   background-image:radial-gradient(circle,var(--b) 26%,transparent 28%);background-size:9px 9px}
 .art.has-img{background:#141414;overflow:hidden}
 .art picture{position:absolute;inset:0;display:block}
+video::-webkit-media-controls-start-playback-button{display:none!important;-webkit-appearance:none}
+video::-webkit-media-controls{display:none!important}
+.hero-vid{pointer-events:none}
+@media (max-aspect-ratio: 4/5){.art .hero-vid{display:none!important}}
 .art video,.frame video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .frame{position:relative}
 .p-grid .frame video{position:static;height:100%}
-@media (max-aspect-ratio: 4/5){.hero-vid{display:none}}
-@media (prefers-reduced-motion:reduce){.hero-vid{display:none}}
+@media (prefers-reduced-motion:reduce){.art .hero-vid{display:none!important}}
 .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:var(--pos,50% 50%);display:block}
 .art .lbl{position:absolute;left:.7rem;top:.55rem;font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;color:#fff;mix-blend-mode:difference}
 .art.motion{background-image:repeating-linear-gradient(100deg,var(--a) 0 28px,var(--b) 28px 56px);background-size:400% 100%;animation:roll 6s linear infinite}
@@ -223,7 +227,7 @@ dialog::backdrop{background:rgba(0,0,0,.25)}
   :root{--pad:1rem}
   .top{grid-template-columns:1fr auto auto;font-size:1rem}
   .top .hide-m{display:none}
-  .hero-foot{grid-template-columns:1fr auto;font-size:.85rem}
+  .hero-foot{grid-template-columns:1fr auto;font-size:.85rem;bottom:calc(env(safe-area-inset-bottom,0px) + 9.8rem)}
   .hero-foot .hide-m{display:none}
   .works{grid-template-columns:repeat(6,minmax(0,1fr));padding-top:78vh;row-gap:4vh}
   .work{grid-column:var(--mc) / span var(--ms);margin-top:0}
@@ -535,7 +539,7 @@ const src = f => "img/" + f;
 const vsrc = f => "videos/" + f;
 /* Portada de cada proyecto (índice → archivo y punto de anclaje del recorte) */
 const IMG = {
-  0: {v:"watts-hero.mp4", m:"hero-watts-mobile.jpg", f:"hero-watts.jpg", pos:"50% 45%"},
+  0: {v:"watts-hero.mp4", m:"watts-hero-mobile.webp", f:"hero-watts.jpg", pos:"50% 45%"},
   1: {m:"hero-alagorra-mobile.jpg", f:"hero-alagorra.jpg", pos:"38% 55%"},
   2: {m:"hero-daam-mobile.jpg", f:"hero-daam.jpg", pos:"50% 50%"},
   3: {f:"masmedia-udla-01.jpg", pos:"50% 50%"},
@@ -589,14 +593,34 @@ featured.forEach((pi,k) => {
   hero.appendChild(s);
 });
 const slides = [...hero.querySelectorAll(".slide")];
+/* iOS: los videos insertados por código necesitan muted como propiedad para reproducirse solos */
+const kick = v => { v.muted = true; v.defaultMuted = true; v.playsInline = true; const pr = v.play(); if (pr) pr.catch(() => {}); };
+if (!reduce) hero.querySelectorAll("video").forEach(v => { kick(v); v.addEventListener("loadeddata", () => kick(v), {once:true}); });
+addEventListener("touchstart", () => { if (!reduce) hero.querySelectorAll("video").forEach(kick); }, {once:true, passive:true});
 let slide = 0, timer;
 function showSlide(n){
   slide = (n + slides.length) % slides.length;
   slides.forEach((s,k) => s.classList.toggle("on", k === slide));
+  rewind(slides[slide]);
   current = null; track();
   restart();
 }
-function restart(){ clearInterval(timer); if (!reduce) timer = setInterval(() => showSlide(slide + 1), 5500); }
+/* cada destacado dura 5,5 s; si tiene video, dura lo mismo que el video y parte desde el inicio */
+const HERO_MS = 5500, VIDEO_MS = 4800;
+let rw = 0;
+function rewind(s){
+  const v = s.querySelector("video");
+  if (v && getComputedStyle(v).display !== "none"){ try { v.currentTime = 0; } catch(e){} kick(v); }
+  const im = s.querySelector("picture img"), src = s.querySelector("picture source");
+  if (src && /\.webp/.test(src.srcset)) { rw++; src.srcset = src.srcset.split("#")[0] + "#r" + rw; }
+  else if (im && /\.webp/.test(im.src)) { rw++; im.src = im.src.split("#")[0] + "#r" + rw; }
+}
+function restart(){
+  clearTimeout(timer);
+  if (reduce) return;
+  const ms = IMG[featured[slide]]?.v ? VIDEO_MS : HERO_MS;
+  timer = setTimeout(() => showSlide(slide + 1), ms);
+}
 restart();
 
 /* works */
@@ -755,7 +779,7 @@ function mediaHTML(p, g){
 }
 const vidIO = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => {
   const v = e.target;
-  if (e.isIntersecting && !reduce){ v.play().catch(() => {}); } else { v.pause(); }
+  if (e.isIntersecting && !reduce){ v.muted = true; v.playsInline = true; v.play().catch(() => {}); } else { v.pause(); }
 }), {threshold: .25}) : null;
 function watchVideos(root){ root.querySelectorAll("video.loopvid").forEach(v => { if (vidIO) vidIO.observe(v); if (reduce) v.controls = true; }); }
 function figHTML(p, g){
